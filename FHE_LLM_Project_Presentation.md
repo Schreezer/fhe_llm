@@ -111,7 +111,7 @@
 
 ### Future Directions:
 1. **Scaling to Larger Models**: Increase embedding dimensions and layers
-2. **Circuit Optimization**: Reduce compilation and execution time[1]
+2. **Circuit Optimization**: Reduce compilation and execution time
 3. **Adapting to Other Architectures**: Explore implementing our FHE techniques on alternative LLMs, such as [BitNet](https://github.com/microsoft/BitNet), which is specifically designed for bit-efficient transformer models. This could further improve FHE compatibility and efficiency.
 
 
