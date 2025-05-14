@@ -121,7 +121,6 @@
 
 - Successfully implemented a working FHE-compatible language model
 - Developed innovative techniques for bit-width control in transformers
-- Created a fully functional model with perfect accuracy under encryption
 - Demonstrated feasibility of privacy-preserving inference with LLMs
 - Established foundation for future research in FHE-compatible deep learning
 
