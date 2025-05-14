@@ -1,0 +1,6 @@
+93a43d9a5c22450bbf06e78da2cb6eeef084b717		branch 'master' of https://github.com/karpathy/nanoGPT
+8b2e622b275f251a9942821f5fabd6c7409bdd94	not-for-merge	branch 'autocast_wip' of https://github.com/karpathy/nanoGPT
+2892858ce7c69224dfe03343486fb00f93432a50	not-for-merge	branch 'bias_test' of https://github.com/karpathy/nanoGPT
+23a0bfac20945a3801f1a57dfa583e8495be6d26	not-for-merge	branch 'init_test' of https://github.com/karpathy/nanoGPT
+684800dd872135983297cc4c72c7e445083b372f	not-for-merge	branch 'multi_node_ddp' of https://github.com/karpathy/nanoGPT
+89da79eee1f2c168166a06cc5714898d07d3701e	not-for-merge	branch 'tie_weights' of https://github.com/karpathy/nanoGPT

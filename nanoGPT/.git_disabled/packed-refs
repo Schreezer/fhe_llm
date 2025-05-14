@@ -1,0 +1,7 @@
+# pack-refs with: peeled fully-peeled sorted 
+8b2e622b275f251a9942821f5fabd6c7409bdd94 refs/remotes/origin/autocast_wip
+2892858ce7c69224dfe03343486fb00f93432a50 refs/remotes/origin/bias_test
+23a0bfac20945a3801f1a57dfa583e8495be6d26 refs/remotes/origin/init_test
+93a43d9a5c22450bbf06e78da2cb6eeef084b717 refs/remotes/origin/master
+684800dd872135983297cc4c72c7e445083b372f refs/remotes/origin/multi_node_ddp
+89da79eee1f2c168166a06cc5714898d07d3701e refs/remotes/origin/tie_weights

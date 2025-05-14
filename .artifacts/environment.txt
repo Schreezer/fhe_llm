@@ -1,0 +1,2 @@
+macOS-15.5-arm64-arm-64bit Darwin Kernel Version 24.5.0: Tue Apr 22 20:41:45 PDT 2025; root:xnu-11417.121.6~4/RELEASE_ARM64_T6000
+Python 3.10.1

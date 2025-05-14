@@ -1,0 +1,500 @@
+  %0 = _x                                        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+  %1 = 0.0                                       # ClearScalar<float64>
+  %2 = subtract(%0, %1)                          # EncryptedTensor<float64, shape=(1, 32, 64)>
+  %3 = 0.009999999776482582                      # ClearScalar<float64>
+  %4 = multiply(%3, %2)                          # EncryptedTensor<float64, shape=(1, 32, 64)>
+  %5 = [1.0138545 ... .9418791 ]                 # ClearTensor<float32, shape=(64,)>
+  %6 = multiply(%4, %5)                          # EncryptedTensor<float64, shape=(1, 32, 64)>
+  %7 = subgraph(%0)                              # EncryptedTensor<uint1, shape=(1, 32, 64)>
+  %8 = [[-1 -1  0 ...  0  0  0]]                 # ClearTensor<int3, shape=(64, 64)>                          @ /attn/query/MatMul.matmul
+  %9 = matmul(%7, %8)                            # EncryptedTensor<uint7, shape=(1, 32, 64)>                  @ /attn/query/MatMul.matmul
+ %10 = 0.0007430602397237505                     # ClearScalar<float64>
+ %11 = divide(%6, %10)                           # EncryptedTensor<float64, shape=(1, 32, 64)>
+ %12 = -11                                       # ClearScalar<int5>
+ %13 = add(%11, %12)                             # EncryptedTensor<float64, shape=(1, 32, 64)>
+ %14 = rint(%13)                                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+ %15 = 0                                         # ClearScalar<uint1>
+ %16 = 7                                         # ClearScalar<uint3>
+ %17 = clip(%14, %15, %16)                       # EncryptedTensor<float64, shape=(1, 32, 64)>
+ %18 = astype(%17, dtype=int_)                   # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %19 = [[0 0 0 .. ... .. 0 0 0]]                 # ClearTensor<int3, shape=(64, 64)>                          @ /attn/key/MatMul.matmul
+ %20 = matmul(%18, %19)                          # EncryptedTensor<uint7, shape=(1, 32, 64)>                  @ /attn/key/MatMul.matmul
+ %21 = subgraph(%20)                             # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %22 = subgraph(%0)                              # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %23 = [[ 0  0  0 ...  0  0  0]]                 # ClearTensor<int3, shape=(64, 64)>                          @ /attn/value/MatMul.matmul
+ %24 = matmul(%22, %23)                          # EncryptedTensor<uint7, shape=(1, 32, 64)>                  @ /attn/value/MatMul.matmul
+ %25 = transpose(%21, axes=(0, 2, 1))            # EncryptedTensor<uint1, shape=(1, 64, 32)>
+ %26 = subgraph(%9)                              # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %27 = subgraph(%25)                             # EncryptedTensor<uint1, shape=(1, 64, 32)>
+ %28 = copy_function(%26)                        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %29 = copy_function(%27)                        # EncryptedTensor<uint1, shape=(1, 64, 32)>
+ %30 = zeros()                                   # EncryptedTensor<uint1, shape=(1, 32, 32)>                  @ /attn/MatMul.matmul.encrypted_matmul
+ %31 = %28[0]                                    # EncryptedTensor<uint1, shape=(32, 64)>                     @ /attn/MatMul.matmul.encrypted_matmul
+ %32 = %29[0]                                    # EncryptedTensor<uint1, shape=(64, 32)>                     @ /attn/MatMul.matmul.encrypted_matmul
+ %33 = reshape(%31, newshape=(32, 64, 1))        # EncryptedTensor<uint1, shape=(32, 64, 1)>                  @ /attn/MatMul.matmul.encrypted_matmul
+ %34 = reshape(%32, newshape=(1, 64, 32))        # EncryptedTensor<uint1, shape=(1, 64, 32)>                  @ /attn/MatMul.matmul.encrypted_matmul
+ %35 = add(%33, %34)                             # EncryptedTensor<uint2, shape=(32, 64, 32)>                 @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+ %36 = subtract(%33, %34)                        # EncryptedTensor<uint1, shape=(32, 64, 32)>                 @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+ %37 = subgraph(%35)                             # EncryptedTensor<uint1, shape=(32, 64, 32)>                 @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+ %38 = subgraph(%36)                             # EncryptedTensor<uint1, shape=(32, 64, 32)>                 @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+ %39 = subtract(%37, %38)                        # EncryptedTensor<uint1, shape=(32, 64, 32)>                 @ /attn/MatMul.matmul.encrypted_matmul
+ %40 = sum(%39, axis=1)                          # EncryptedTensor<uint7, shape=(32, 32)>                     @ /attn/MatMul.matmul.encrypted_matmul
+ %41 = (%30[0] = %40)                            # EncryptedTensor<uint1, shape=(1, 32, 32)>                  @ /attn/MatMul.matmul.encrypted_matmul
+ %42 = copy_function(%26)                        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %43 = sum(%42, axis=-1, keepdims=True)          # EncryptedTensor<uint7, shape=(1, 32, 1)>                   @ /attn/MatMul.matmul_inputsum
+ %44 = 1                                         # ClearScalar<uint1>                                         @ /attn/MatMul.matmul_inputsum
+ %45 = multiply(%44, %43)                        # EncryptedTensor<uint1, shape=(1, 32, 1)>                   @ /attn/MatMul.matmul_inputsum
+ %46 = add(%41, %45)                             # EncryptedTensor<uint2, shape=(1, 32, 32)>                  @ /attn/MatMul.matmul_add_inputsum
+ %47 = copy_function(%27)                        # EncryptedTensor<uint1, shape=(1, 64, 32)>
+ %48 = sum(%47, axis=-2, keepdims=True)          # EncryptedTensor<uint7, shape=(1, 1, 32)>                   @ /attn/MatMul.sum_weights_times_zero_point
+ %49 = 0                                         # ClearScalar<uint1>                                         @ /attn/MatMul.sum_weights_times_zero_point
+ %50 = multiply(%49, %48)                        # EncryptedTensor<uint1, shape=(1, 1, 32)>                   @ /attn/MatMul.sum_weights_times_zero_point
+ %51 = 0                                         # ClearScalar<uint1>
+ %52 = add(%46, %51)                             # EncryptedTensor<uint2, shape=(1, 32, 32)>
+ %53 = subtract(%52, %50)                        # EncryptedTensor<uint1, shape=(1, 32, 32)>
+ %54 = subgraph(%53)                             # EncryptedTensor<uint1, shape=(1, 32, 32)>
+ %55 = subgraph(%24)                             # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %56 = copy_function(%54)                        # EncryptedTensor<uint1, shape=(1, 32, 32)>
+ %57 = copy_function(%55)                        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %58 = zeros()                                   # EncryptedTensor<uint1, shape=(1, 32, 64)>                  @ /attn/MatMul_1.matmul.encrypted_matmul
+ %59 = %56[0]                                    # EncryptedTensor<uint1, shape=(32, 32)>                     @ /attn/MatMul_1.matmul.encrypted_matmul
+ %60 = %57[0]                                    # EncryptedTensor<uint1, shape=(32, 64)>                     @ /attn/MatMul_1.matmul.encrypted_matmul
+ %61 = reshape(%59, newshape=(32, 32, 1))        # EncryptedTensor<uint1, shape=(32, 32, 1)>                  @ /attn/MatMul_1.matmul.encrypted_matmul
+ %62 = reshape(%60, newshape=(1, 32, 64))        # EncryptedTensor<uint1, shape=(1, 32, 64)>                  @ /attn/MatMul_1.matmul.encrypted_matmul
+ %63 = add(%61, %62)                             # EncryptedTensor<uint2, shape=(32, 32, 64)>                 @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+ %64 = subtract(%61, %62)                        # EncryptedTensor<uint1, shape=(32, 32, 64)>                 @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+ %65 = subgraph(%63)                             # EncryptedTensor<uint1, shape=(32, 32, 64)>                 @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+ %66 = subgraph(%64)                             # EncryptedTensor<uint1, shape=(32, 32, 64)>                 @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+ %67 = subtract(%65, %66)                        # EncryptedTensor<uint1, shape=(32, 32, 64)>                 @ /attn/MatMul_1.matmul.encrypted_matmul
+ %68 = sum(%67, axis=1)                          # EncryptedTensor<uint6, shape=(32, 64)>                     @ /attn/MatMul_1.matmul.encrypted_matmul
+ %69 = (%58[0] = %68)                            # EncryptedTensor<uint1, shape=(1, 32, 64)>                  @ /attn/MatMul_1.matmul.encrypted_matmul
+ %70 = copy_function(%54)                        # EncryptedTensor<uint1, shape=(1, 32, 32)>
+ %71 = sum(%70, axis=-1, keepdims=True)          # EncryptedTensor<uint6, shape=(1, 32, 1)>                   @ /attn/MatMul_1.matmul_inputsum
+ %72 = 1                                         # ClearScalar<uint1>                                         @ /attn/MatMul_1.matmul_inputsum
+ %73 = multiply(%72, %71)                        # EncryptedTensor<uint1, shape=(1, 32, 1)>                   @ /attn/MatMul_1.matmul_inputsum
+ %74 = add(%69, %73)                             # EncryptedTensor<uint2, shape=(1, 32, 64)>                  @ /attn/MatMul_1.matmul_add_inputsum
+ %75 = copy_function(%55)                        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %76 = sum(%75, axis=-2, keepdims=True)          # EncryptedTensor<uint6, shape=(1, 1, 64)>                   @ /attn/MatMul_1.sum_weights_times_zero_point
+ %77 = 0                                         # ClearScalar<uint1>                                         @ /attn/MatMul_1.sum_weights_times_zero_point
+ %78 = multiply(%77, %76)                        # EncryptedTensor<uint1, shape=(1, 1, 64)>                   @ /attn/MatMul_1.sum_weights_times_zero_point
+ %79 = 0                                         # ClearScalar<uint1>
+ %80 = add(%74, %79)                             # EncryptedTensor<uint2, shape=(1, 32, 64)>
+ %81 = subtract(%80, %78)                        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %82 = subgraph(%81)                             # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %83 = [[ 0  0  0 ... -1  0  1]]                 # ClearTensor<int3, shape=(64, 64)>                          @ /attn/out_proj/MatMul.matmul
+ %84 = matmul(%82, %83)                          # EncryptedTensor<uint7, shape=(1, 32, 64)>                  @ /attn/out_proj/MatMul.matmul
+ %85 = subgraph(%0)                              # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %86 = subgraph(%84)                             # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %87 = subgraph(%85)                             # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %88 = subgraph(%86)                             # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %89 = 1                                         # ClearScalar<uint1>
+ %90 = multiply(%89, %88)                        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %91 = add(%87, %90)                             # EncryptedTensor<uint2, shape=(1, 32, 64)>
+ %92 = subgraph(%91)                             # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %93 = [[ 0  0  0 ... -1 -1  0]]                 # ClearTensor<int3, shape=(64, 128)>                         @ /mlp/fc1/MatMul.matmul
+ %94 = matmul(%92, %93)                          # EncryptedTensor<uint7, shape=(1, 32, 128)>                 @ /mlp/fc1/MatMul.matmul
+ %95 = subgraph(%94)                             # EncryptedTensor<uint1, shape=(1, 32, 128)>
+ %96 = [[ 0  0  0 ...  0  0 -1]]                 # ClearTensor<int3, shape=(128, 64)>                         @ /mlp/fc2/MatMul.matmul
+ %97 = matmul(%95, %96)                          # EncryptedTensor<uint8, shape=(1, 32, 64)>                  @ /mlp/fc2/MatMul.matmul
+ %98 = subgraph(%91)                             # EncryptedTensor<uint1, shape=(1, 32, 64)>
+ %99 = subgraph(%97)                             # EncryptedTensor<uint1, shape=(1, 32, 64)>
+%100 = subgraph(%98)                             # EncryptedTensor<uint1, shape=(1, 32, 64)>
+%101 = subgraph(%99)                             # EncryptedTensor<uint1, shape=(1, 32, 64)>
+%102 = 1                                         # ClearScalar<uint1>
+%103 = multiply(%102, %101)                      # EncryptedTensor<uint1, shape=(1, 32, 64)>
+%104 = add(%100, %103)                           # EncryptedTensor<uint2, shape=(1, 32, 64)>
+return %104
+
+Subgraphs:
+
+    %7 = subgraph(%0):
+
+         %0 = input                            # EncryptedTensor<uint1, shape=(1, 32, 64)>
+         %1 = 0.0                              # ClearScalar<float64>
+         %2 = subtract(%0, %1)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %3 = 0.009999999776482582             # ClearScalar<float64>
+         %4 = multiply(%3, %2)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %5 = [1.0138545 ... .9418791 ]        # ClearTensor<float32, shape=(64,)>
+         %6 = multiply(%4, %5)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %7 = 0.0007430602397237505            # ClearScalar<float64>
+         %8 = divide(%6, %7)                   # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %9 = -11                              # ClearScalar<int5>
+        %10 = add(%8, %9)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %11 = rint(%10)                        # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %12 = 0                                # ClearScalar<uint1>
+        %13 = 7                                # ClearScalar<uint3>
+        %14 = clip(%11, %12, %13)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %15 = astype(%14, dtype=int_)          # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %15
+
+    %21 = subgraph(%20):
+
+         %0 = input                            # EncryptedTensor<uint7, shape=(1, 32, 64)>          @ /attn/key/MatMul.matmul
+         %1 = astype(%0, dtype=float64)        # EncryptedTensor<float64, shape=(1, 32, 64)>        @ /attn/key/MatMul.matmul_rounding
+         %2 = 0                                # ClearScalar<uint1>
+         %3 = add(%1, %2)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %4 = [[ 22  22  ...    0  66]]        # ClearTensor<int8, shape=(1, 64)>
+         %5 = subtract(%3, %4)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %6 = 0.00023345456028376447           # ClearScalar<float64>
+         %7 = multiply(%6, %5)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %8 = 0.1                              # ClearScalar<float32>
+         %9 = multiply(%7, %8)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %10 = 0.00013246862385861817           # ClearScalar<float64>
+        %11 = divide(%9, %10)                  # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %12 = 15                               # ClearScalar<uint4>
+        %13 = add(%11, %12)                    # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %14 = rint(%13)                        # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %15 = 0                                # ClearScalar<uint1>
+        %16 = 31                               # ClearScalar<uint5>
+        %17 = clip(%14, %15, %16)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %18 = astype(%17, dtype=int_)          # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %18
+
+    %22 = subgraph(%0):
+
+         %0 = input                            # EncryptedTensor<uint1, shape=(1, 32, 64)>
+         %1 = 0.0                              # ClearScalar<float64>
+         %2 = subtract(%0, %1)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %3 = 0.009999999776482582             # ClearScalar<float64>
+         %4 = multiply(%3, %2)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %5 = [1.0138545 ... .9418791 ]        # ClearTensor<float32, shape=(64,)>
+         %6 = multiply(%4, %5)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %7 = 0.0007430602397237505            # ClearScalar<float64>
+         %8 = divide(%6, %7)                   # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %9 = -11                              # ClearScalar<int5>
+        %10 = add(%8, %9)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %11 = rint(%10)                        # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %12 = 0                                # ClearScalar<uint1>
+        %13 = 7                                # ClearScalar<uint3>
+        %14 = clip(%11, %12, %13)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %15 = astype(%14, dtype=int_)          # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %15
+
+    %26 = subgraph(%9):
+
+         %0 = input                            # EncryptedTensor<uint7, shape=(1, 32, 64)>          @ /attn/query/MatMul.matmul
+         %1 = astype(%0, dtype=float64)        # EncryptedTensor<float64, shape=(1, 32, 64)>        @ /attn/query/MatMul.matmul_rounding
+         %2 = 0                                # ClearScalar<uint1>
+         %3 = add(%1, %2)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %4 = [[  77   2 ... -33    0]]        # ClearTensor<int9, shape=(1, 64)>
+         %5 = subtract(%3, %4)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %6 = 0.00026963481380951987           # ClearScalar<float64>
+         %7 = multiply(%6, %5)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %8 = 0.1                              # ClearScalar<float32>
+         %9 = multiply(%7, %8)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %10 = 0.0010558731265685778            # ClearScalar<float64>
+        %11 = divide(%9, %10)                  # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %12 = 0                                # ClearScalar<uint1>
+        %13 = add(%11, %12)                    # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %14 = rint(%13)                        # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %15 = -4                               # ClearScalar<int3>
+        %16 = 3                                # ClearScalar<uint2>
+        %17 = clip(%14, %15, %16)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %18 = astype(%17, dtype=int_)          # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %18
+
+    %27 = subgraph(%25):
+
+         %0 = input                          # EncryptedTensor<uint1, shape=(1, 64, 32)>
+         %1 = 15.0                           # ClearScalar<float64>
+         %2 = subtract(%0, %1)               # EncryptedTensor<float64, shape=(1, 64, 32)>
+         %3 = 0.00013246862385861817         # ClearScalar<float64>
+         %4 = multiply(%3, %2)               # EncryptedTensor<float64, shape=(1, 64, 32)>
+         %5 = 0.0005866467628024519          # ClearScalar<float64>
+         %6 = divide(%4, %5)                 # EncryptedTensor<float64, shape=(1, 64, 32)>
+         %7 = -1                             # ClearScalar<int1>
+         %8 = add(%6, %7)                    # EncryptedTensor<float64, shape=(1, 64, 32)>
+         %9 = rint(%8)                       # EncryptedTensor<float64, shape=(1, 64, 32)>
+        %10 = -4                             # ClearScalar<int3>
+        %11 = 3                              # ClearScalar<uint2>
+        %12 = clip(%9, %10, %11)             # EncryptedTensor<float64, shape=(1, 64, 32)>
+        %13 = astype(%12, dtype=int_)        # EncryptedTensor<uint1, shape=(1, 64, 32)>
+        return %13
+
+    %37 = subgraph(%35):
+
+        %0 = input                            # EncryptedTensor<uint2, shape=(32, 64, 32)>          @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %1 = astype(%0, dtype=float64)        # EncryptedTensor<float64, shape=(32, 64, 32)>        @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %2 = 2                                # ClearScalar<uint2>                                  @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %3 = power(%1, %2)                    # EncryptedTensor<float64, shape=(32, 64, 32)>        @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %4 = 4.0                              # ClearScalar<float64>                                @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %5 = divide(%3, %4)                   # EncryptedTensor<float64, shape=(32, 64, 32)>        @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %6 = astype(%5, dtype=int_)           # EncryptedTensor<uint1, shape=(32, 64, 32)>          @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        return %6
+
+    %38 = subgraph(%36):
+
+        %0 = input                            # EncryptedTensor<uint1, shape=(32, 64, 32)>          @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %1 = astype(%0, dtype=float64)        # EncryptedTensor<float64, shape=(32, 64, 32)>        @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %2 = 2                                # ClearScalar<uint2>                                  @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %3 = power(%1, %2)                    # EncryptedTensor<float64, shape=(32, 64, 32)>        @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %4 = 4.0                              # ClearScalar<float64>                                @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %5 = divide(%3, %4)                   # EncryptedTensor<float64, shape=(32, 64, 32)>        @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        %6 = astype(%5, dtype=int_)           # EncryptedTensor<uint1, shape=(32, 64, 32)>          @ /attn/MatMul.matmul.encrypted_matmul.pbs_multiplication
+        return %6
+
+    %54 = subgraph(%53):
+
+         %0 = input                          # EncryptedTensor<uint1, shape=(1, 32, 32)>
+         %1 = 6.194245516315597e-07          # ClearScalar<float64>
+         %2 = multiply(%1, %0)               # EncryptedTensor<float64, shape=(1, 32, 32)>
+         %3 = 0.1                            # ClearScalar<float32>
+         %4 = multiply(%2, %3)               # EncryptedTensor<float64, shape=(1, 32, 32)>
+         %5 = multiply(%4, %4)               # EncryptedTensor<float64, shape=(1, 32, 32)>
+         %6 = 1                              # ClearScalar<uint1>
+         %7 = multiply(%6, %4)               # EncryptedTensor<float64, shape=(1, 32, 32)>
+         %8 = add(%5, %7)                    # EncryptedTensor<float64, shape=(1, 32, 32)>
+         %9 = 1.7686794953220794e-06         # ClearScalar<float64>
+        %10 = divide(%8, %9)                 # EncryptedTensor<float64, shape=(1, 32, 32)>
+        %11 = 0                              # ClearScalar<uint1>
+        %12 = add(%10, %11)                  # EncryptedTensor<float64, shape=(1, 32, 32)>
+        %13 = rint(%12)                      # EncryptedTensor<float64, shape=(1, 32, 32)>
+        %14 = 0                              # ClearScalar<uint1>
+        %15 = 7                              # ClearScalar<uint3>
+        %16 = clip(%13, %14, %15)            # EncryptedTensor<float64, shape=(1, 32, 32)>
+        %17 = astype(%16, dtype=int_)        # EncryptedTensor<uint1, shape=(1, 32, 32)>
+        return %17
+
+    %55 = subgraph(%24):
+
+         %0 = input                            # EncryptedTensor<uint7, shape=(1, 32, 64)>          @ /attn/value/MatMul.matmul
+         %1 = astype(%0, dtype=float64)        # EncryptedTensor<float64, shape=(1, 32, 64)>        @ /attn/value/MatMul.matmul_rounding
+         %2 = 0                                # ClearScalar<uint1>
+         %3 = add(%1, %2)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %4 = [[  55   4 ... -44    0]]        # ClearTensor<int9, shape=(1, 64)>
+         %5 = subtract(%3, %4)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %6 = 0.0001240843100257886            # ClearScalar<float64>
+         %7 = multiply(%6, %5)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %8 = 0.008671837521916961             # ClearScalar<float64>
+         %9 = divide(%7, %8)                   # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %10 = -1                               # ClearScalar<int1>
+        %11 = add(%9, %10)                     # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %12 = rint(%11)                        # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %13 = -4                               # ClearScalar<int3>
+        %14 = 3                                # ClearScalar<uint2>
+        %15 = clip(%12, %13, %14)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %16 = astype(%15, dtype=int_)          # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %16
+
+    %65 = subgraph(%63):
+
+        %0 = input                            # EncryptedTensor<uint2, shape=(32, 32, 64)>          @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %1 = astype(%0, dtype=float64)        # EncryptedTensor<float64, shape=(32, 32, 64)>        @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %2 = 2                                # ClearScalar<uint2>                                  @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %3 = power(%1, %2)                    # EncryptedTensor<float64, shape=(32, 32, 64)>        @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %4 = 4.0                              # ClearScalar<float64>                                @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %5 = divide(%3, %4)                   # EncryptedTensor<float64, shape=(32, 32, 64)>        @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %6 = astype(%5, dtype=int_)           # EncryptedTensor<uint1, shape=(32, 32, 64)>          @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        return %6
+
+    %66 = subgraph(%64):
+
+        %0 = input                            # EncryptedTensor<uint1, shape=(32, 32, 64)>          @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %1 = astype(%0, dtype=float64)        # EncryptedTensor<float64, shape=(32, 32, 64)>        @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %2 = 2                                # ClearScalar<uint2>                                  @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %3 = power(%1, %2)                    # EncryptedTensor<float64, shape=(32, 32, 64)>        @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %4 = 4.0                              # ClearScalar<float64>                                @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %5 = divide(%3, %4)                   # EncryptedTensor<float64, shape=(32, 32, 64)>        @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        %6 = astype(%5, dtype=int_)           # EncryptedTensor<uint1, shape=(32, 32, 64)>          @ /attn/MatMul_1.matmul.encrypted_matmul.pbs_multiplication
+        return %6
+
+    %82 = subgraph(%81):
+
+         %0 = input                          # EncryptedTensor<uint1, shape=(1, 32, 64)>
+         %1 = 1.5337701211779163e-08         # ClearScalar<float64>
+         %2 = multiply(%1, %0)               # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %3 = 4.908064387769334e-07          # ClearScalar<float64>
+         %4 = divide(%2, %3)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %5 = -1                             # ClearScalar<int1>
+         %6 = add(%4, %5)                    # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %7 = rint(%6)                       # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %8 = -4                             # ClearScalar<int3>
+         %9 = 3                              # ClearScalar<uint2>
+        %10 = clip(%7, %8, %9)               # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %11 = astype(%10, dtype=int_)        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %11
+
+    %85 = subgraph(%0):
+
+         %0 = input                          # EncryptedTensor<uint1, shape=(1, 32, 64)>
+         %1 = 0.0                            # ClearScalar<float64>
+         %2 = subtract(%0, %1)               # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %3 = 0.009999999776482582           # ClearScalar<float64>
+         %4 = multiply(%3, %2)               # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %5 = 0.009999999776482582           # ClearScalar<float64>
+         %6 = divide(%4, %5)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %7 = 0                              # ClearScalar<uint1>
+         %8 = add(%6, %7)                    # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %9 = rint(%8)                       # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %10 = 0                              # ClearScalar<uint1>
+        %11 = 7                              # ClearScalar<uint3>
+        %12 = clip(%9, %10, %11)             # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %13 = astype(%12, dtype=int_)        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %13
+
+    %86 = subgraph(%84):
+
+         %0 = input                            # EncryptedTensor<uint7, shape=(1, 32, 64)>          @ /attn/out_proj/MatMul.matmul
+         %1 = astype(%0, dtype=float64)        # EncryptedTensor<float64, shape=(1, 32, 64)>        @ /attn/out_proj/MatMul.matmul_rounding
+         %2 = 0                                # ClearScalar<uint1>
+         %3 = add(%1, %2)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %4 = [[  0   3  ...    8  -6]]        # ClearTensor<int6, shape=(1, 64)>
+         %5 = subtract(%3, %4)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %6 = 9.575454657287025e-08            # ClearScalar<float64>
+         %7 = multiply(%6, %5)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %8 = 0.1                              # ClearScalar<float32>
+         %9 = multiply(%7, %8)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %10 = 3.060346292698543e-07            # ClearScalar<float64>
+        %11 = divide(%9, %10)                  # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %12 = -1                               # ClearScalar<int1>
+        %13 = add(%11, %12)                    # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %14 = rint(%13)                        # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %15 = -4                               # ClearScalar<int3>
+        %16 = 3                                # ClearScalar<uint2>
+        %17 = clip(%14, %15, %16)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %18 = astype(%17, dtype=int_)          # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %18
+
+    %87 = subgraph(%85):
+
+         %0 = input                         # EncryptedTensor<uint1, shape=(1, 32, 64)>
+         %1 = 0.0                           # ClearScalar<float64>
+         %2 = subtract(%0, %1)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %3 = 0.009999999776482582          # ClearScalar<float64>
+         %4 = multiply(%3, %2)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %5 = 6.910459370611871e-08         # ClearScalar<float64>
+         %6 = divide(%4, %5)                # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %7 = 0                             # ClearScalar<uint1>
+         %8 = add(%6, %7)                   # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %9 = rint(%8)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %10 = astype(%9, dtype=int_)        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %10
+
+    %88 = subgraph(%86):
+
+         %0 = input                         # EncryptedTensor<uint1, shape=(1, 32, 64)>
+         %1 = -1.0                          # ClearScalar<float64>
+         %2 = subtract(%0, %1)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %3 = 3.060346292698543e-07         # ClearScalar<float64>
+         %4 = multiply(%3, %2)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %5 = 6.910459370611871e-08         # ClearScalar<float64>
+         %6 = divide(%4, %5)                # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %7 = 0                             # ClearScalar<uint1>
+         %8 = add(%6, %7)                   # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %9 = rint(%8)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %10 = astype(%9, dtype=int_)        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %10
+
+    %92 = subgraph(%91):
+
+         %0 = input                            # EncryptedTensor<uint2, shape=(1, 32, 64)>
+         %1 = 0.0                              # ClearScalar<float64>
+         %2 = subtract(%0, %1)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %3 = 6.910459370611871e-08            # ClearScalar<float64>
+         %4 = multiply(%3, %2)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %5 = [0.8839415 ... .9317965 ]        # ClearTensor<float32, shape=(64,)>
+         %6 = multiply(%4, %5)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %7 = 0.00030781733725555177           # ClearScalar<float64>
+         %8 = divide(%6, %7)                   # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %9 = -28                              # ClearScalar<int6>
+        %10 = add(%8, %9)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %11 = rint(%10)                        # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %12 = 0                                # ClearScalar<uint1>
+        %13 = 7                                # ClearScalar<uint3>
+        %14 = clip(%11, %12, %13)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %15 = astype(%14, dtype=int_)          # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %15
+
+    %95 = subgraph(%94):
+
+         %0 = input                            # EncryptedTensor<uint7, shape=(1, 32, 128)>          @ /mlp/fc1/MatMul.matmul
+         %1 = astype(%0, dtype=float64)        # EncryptedTensor<float64, shape=(1, 32, 128)>        @ /mlp/fc1/MatMul.matmul_rounding
+         %2 = 0                                # ClearScalar<uint1>
+         %3 = add(%1, %2)                      # EncryptedTensor<float64, shape=(1, 32, 128)>
+         %4 = [[  84  -2 ...  28  112]]        # ClearTensor<int10, shape=(1, 128)>
+         %5 = subtract(%3, %4)                 # EncryptedTensor<float64, shape=(1, 32, 128)>
+         %6 = 4.647185064598603e-05            # ClearScalar<float64>
+         %7 = multiply(%6, %5)                 # EncryptedTensor<float64, shape=(1, 32, 128)>
+         %8 = multiply(%7, %7)                 # EncryptedTensor<float64, shape=(1, 32, 128)>
+         %9 = 1                                # ClearScalar<uint1>
+        %10 = multiply(%9, %7)                 # EncryptedTensor<float64, shape=(1, 32, 128)>
+        %11 = add(%8, %10)                     # EncryptedTensor<float64, shape=(1, 32, 128)>
+        %12 = 0.0030882153622778627            # ClearScalar<float64>
+        %13 = divide(%11, %12)                 # EncryptedTensor<float64, shape=(1, 32, 128)>
+        %14 = 0                                # ClearScalar<uint1>
+        %15 = add(%13, %14)                    # EncryptedTensor<float64, shape=(1, 32, 128)>
+        %16 = rint(%15)                        # EncryptedTensor<float64, shape=(1, 32, 128)>
+        %17 = -4                               # ClearScalar<int3>
+        %18 = 3                                # ClearScalar<uint2>
+        %19 = clip(%16, %17, %18)              # EncryptedTensor<float64, shape=(1, 32, 128)>
+        %20 = astype(%19, dtype=int_)          # EncryptedTensor<uint1, shape=(1, 32, 128)>
+        return %20
+
+    %98 = subgraph(%91):
+
+         %0 = input                          # EncryptedTensor<uint2, shape=(1, 32, 64)>
+         %1 = 0.0                            # ClearScalar<float64>
+         %2 = subtract(%0, %1)               # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %3 = 6.910459370611871e-08          # ClearScalar<float64>
+         %4 = multiply(%3, %2)               # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %5 = 3.060346292699543e-07          # ClearScalar<float64>
+         %6 = divide(%4, %5)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %7 = -32677                         # ClearScalar<int16>
+         %8 = add(%6, %7)                    # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %9 = rint(%8)                       # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %10 = -4                             # ClearScalar<int3>
+        %11 = 3                              # ClearScalar<uint2>
+        %12 = clip(%9, %10, %11)             # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %13 = astype(%12, dtype=int_)        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %13
+
+    %99 = subgraph(%97):
+
+         %0 = input                            # EncryptedTensor<uint8, shape=(1, 32, 64)>          @ /mlp/fc2/MatMul.matmul
+         %1 = astype(%0, dtype=float64)        # EncryptedTensor<float64, shape=(1, 32, 64)>        @ /mlp/fc2/MatMul.matmul_rounding
+         %2 = 0                                # ClearScalar<uint1>
+         %3 = add(%1, %2)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %4 = [[0 0 0 0  ...  0 0 0 0]]        # ClearTensor<uint1, shape=(1, 64)>
+         %5 = subtract(%3, %4)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %6 = 0.0004794402593804288            # ClearScalar<float64>
+         %7 = multiply(%6, %5)                 # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %8 = 0.0058104964041856616            # ClearScalar<float64>
+         %9 = divide(%7, %8)                   # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %10 = -1                               # ClearScalar<int1>
+        %11 = add(%9, %10)                     # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %12 = rint(%11)                        # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %13 = -4                               # ClearScalar<int3>
+        %14 = 3                                # ClearScalar<uint2>
+        %15 = clip(%12, %13, %14)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %16 = astype(%15, dtype=int_)          # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %16
+
+    %100 = subgraph(%98):
+
+         %0 = input                         # EncryptedTensor<uint1, shape=(1, 32, 64)>
+         %1 = -32677.0                      # ClearScalar<float64>
+         %2 = subtract(%0, %1)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %3 = 3.060346292699543e-07         # ClearScalar<float64>
+         %4 = multiply(%3, %2)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %5 = 3.060346292699543e-07         # ClearScalar<float64>
+         %6 = divide(%4, %5)                # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %7 = 0                             # ClearScalar<uint1>
+         %8 = add(%6, %7)                   # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %9 = rint(%8)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %10 = astype(%9, dtype=int_)        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %10
+
+    %101 = subgraph(%99):
+
+         %0 = input                         # EncryptedTensor<uint1, shape=(1, 32, 64)>
+         %1 = -1.0                          # ClearScalar<float64>
+         %2 = subtract(%0, %1)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %3 = 0.0058104964041856616         # ClearScalar<float64>
+         %4 = multiply(%3, %2)              # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %5 = 3.060346292699543e-07         # ClearScalar<float64>
+         %6 = divide(%4, %5)                # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %7 = 0                             # ClearScalar<uint1>
+         %8 = add(%6, %7)                   # EncryptedTensor<float64, shape=(1, 32, 64)>
+         %9 = rint(%8)                      # EncryptedTensor<float64, shape=(1, 32, 64)>
+        %10 = astype(%9, dtype=int_)        # EncryptedTensor<uint1, shape=(1, 32, 64)>
+        return %10

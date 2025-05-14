@@ -1,0 +1,8 @@
+2025-05-08 12:19:28,881 - DEBUG - bib4llm.cli - Running command: /Users/chirag13/development/ai_project/fhe_llama_env/bin/bib4llm convert FHE_LLM.pdf
+2025-05-08 12:19:28,884 - INFO - bib4llm.process_bibliography - Initialized BibliographyProcessor for /Users/chirag13/development/ai_project/FHE_LLM.pdf
+2025-05-08 12:19:28,884 - INFO - bib4llm.process_bibliography - Output directory: /Users/chirag13/development/ai_project/FHE_LLM-bib4llm
+2025-05-08 12:19:28,884 - DEBUG - bib4llm.process_bibliography - Database initialized successfully
+2025-05-08 12:19:28,884 - INFO - bib4llm.process_bibliography - Processing PDF: /Users/chirag13/development/ai_project/FHE_LLM.pdf with key: FHE_LLM
+2025-05-08 12:19:28,886 - DEBUG - bib4llm.process_bibliography - Created symbolic link for processing: /Users/chirag13/development/ai_project/FHE_LLM-bib4llm/FHE_LLM/FHE_LLM.pdf -> /Users/chirag13/development/ai_project/FHE_LLM.pdf
+2025-05-08 12:19:34,264 - INFO - bib4llm.process_bibliography - Successfully processed PDF: /Users/chirag13/development/ai_project/FHE_LLM.pdf
+2025-05-08 12:19:34,265 - INFO - bib4llm.process_bibliography - Successfully processed PDF: /Users/chirag13/development/ai_project/FHE_LLM.pdf
