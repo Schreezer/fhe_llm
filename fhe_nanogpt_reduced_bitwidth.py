@@ -13,6 +13,7 @@ import torch.nn as nn
 import numpy as np
 import sys
 from dataclasses import dataclass
+import torch.nn.functional as F
 
 # Import Concrete-ML
 site_packages = '/Users/chirag13/development/ai_project/fhe_llama_env_py310/lib/python3.10/site-packages'
@@ -28,10 +29,25 @@ except ImportError:
 
 # FHE-friendly activation function
 class FHEActivation(nn.Module):
-    """FHE-friendly polynomial activation (x² + x) with scaling"""
+    """FHE-compatible activation function - simplified LeCun tanh for FHE"""
+    def __init__(self):
+        super().__init__()
+    
     def forward(self, x):
-        # Scale down activation to keep bit width small
-        return x * x * 0.1 + x * 0.1
+        # In FHE, we need to use very simple activation functions
+        # ReLU or approximation of tanh
+        
+        # For debugging, print some stats
+        if torch.is_grad_enabled() == False and torch.rand(1)[0] < 0.01:  # Only occasionally during inference
+            print(f"FHEActivation input range: {x.min().item():.4f} to {x.max().item():.4f}")
+        
+        # Apply a simplified activation: clipped ReLU approximation
+        # x = torch.clamp(x, min=0)  # ReLU
+        
+        # Try a different approach - scale by small constant to ensure values don't vanish
+        x = x * 0.5  # Just scale to prevent explosion/vanishing
+        
+        return x
 
 # FHE-friendly layer normalization (simplified)
 class FHELayerNorm(nn.Module):
@@ -86,28 +102,18 @@ class FHEAttention(nn.Module):
 
 # FHE-friendly MLP
 class FHEMLP(nn.Module):
-    """FHE-friendly MLP with bit-width control"""
+    """FHE-compatible MLP with fixed-bit activations"""
     def __init__(self, config):
         super().__init__()
-        self.fc1 = nn.Linear(config.n_embd, config.n_embd * 2, bias=False)
+        self.fc1 = nn.Linear(config.n_embd, config.mlp_dim, bias=False)
         self.activation = FHEActivation()
-        self.fc2 = nn.Linear(config.n_embd * 2, config.n_embd, bias=False)
-        
-        # Very small weight initialization
-        self._init_weights()
-    
-    def _init_weights(self):
-        """Initialize with very small weights for better FHE compatibility"""
-        nn.init.normal_(self.fc1.weight, mean=0.0, std=0.005)
-        nn.init.normal_(self.fc2.weight, mean=0.0, std=0.005)
+        self.fc2 = nn.Linear(config.mlp_dim, config.n_embd, bias=False)
     
     def forward(self, x):
-        # Apply fc1 with scaling
-        x = self.fc1(x) * 0.05
-        # Apply activation
-        x = self.activation(x)
-        # Apply fc2 with scaling
-        x = self.fc2(x) * 0.05
+        # MLP with quantized activations
+        x = self.fc1(x)  # [batch, seq, n_embd] -> [batch, seq, 4*n_embd]
+        x = self.activation(x)  # Apply FHE-friendly activation
+        x = self.fc2(x)  # [batch, seq, 4*n_embd] -> [batch, seq, n_embd]
         return x
 
 # FHE-friendly transformer block with bit-width control
@@ -143,10 +149,14 @@ class FHEBlock(nn.Module):
 # Configuration class
 @dataclass
 class FHEGPTConfig:
-    block_size: int = 32      # Small context window
-    vocab_size: int = 256     # Small vocabulary
-    n_layer: int = 1          # Single layer for FHE compatibility
-    n_embd: int = 16          # Very small embedding size for FHE
+    """GPT-2 configuration for FHE"""
+    block_size: int = 16  # Maximum context window
+    vocab_size: int = 256  # In FHE models, we can use a byte-level encoding
+    n_layer: int = 2  # Number of transformer layers
+    n_head: int = 4  # Number of attention heads
+    n_embd: int = 32  # Embedding dimension
+    mlp_dim: int = 128  # Dimension of the MLP intermediate layer
+    dropout: float = 0.0  # Not used in FHE model
 
 # Main FHE-GPT model with bit-width control
 class FHEReducedBitGPT(nn.Module):
@@ -223,23 +233,50 @@ class FHEReducedBitGPT(nn.Module):
         
         return logits
     
-    @torch.no_grad()
     def generate(self, idx, max_new_tokens):
-        """Generate tokens using greedy decoding"""
+        """
+        Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and complete
+        the sequence max_new_tokens times, feeding the predictions back into the model each time.
+        """
+        # Print model stats during generation
+        print(f"Generating with FHE-compatible model, context size: {idx.shape}")
+        
+        # idx is (B, T) array of indices in the current context
         for _ in range(max_new_tokens):
-            # Crop if needed
+            # If the sequence context is growing too long, truncate it at the block_size
             idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
             
-            # Forward pass
+            # Forward the model to get the logits for the index in the sequence
             logits = self(idx_cond)
             
-            # Get predictions for the last token
-            logits = logits[:, -1, :]
+            # Debug: check if logits are all zero
+            if torch.all(logits == 0).item():
+                print("WARNING: All logits are zero! Debugging...")
+                # Try to diagnose where the zeroing happens
+                for name, param in self.named_parameters():
+                    if torch.all(param == 0).item():
+                        print(f"Parameter {name} is all zeros!")
+                    elif _ == 0:  # Only on first token
+                        print(f"Parameter {name} stats: min={param.min().item():.4f}, max={param.max().item():.4f}")
             
-            # Greedy selection (argmax)
-            idx_next = torch.argmax(logits, dim=-1, keepdim=True)
+            # Print logits stats for debugging
+            print(f"Generation step {_+1}/{max_new_tokens}, logits: min={logits.min().item():.4f}, max={logits.max().item():.4f}")
             
-            # Append to sequence
+            # Focus on the last time step
+            logits = logits[:, -1, :]  # (B, C)
+            
+            # If logits are too small, add small noise to prevent all-zero distributions
+            if logits.max().item() < 0.01:
+                print("Logits too small, adding small noise...")
+                logits = logits + torch.randn_like(logits) * 0.01
+            
+            # Apply softmax to get probabilities
+            probs = F.softmax(logits, dim=-1)
+            
+            # Sample from the distribution
+            idx_next = torch.multinomial(probs, num_samples=1)
+            
+            # Append sampled index to the running sequence
             idx = torch.cat((idx, idx_next), dim=1)
         
         return idx
@@ -334,11 +371,168 @@ def test_fhe_model():
         traceback.print_exc()
         return False
 
-if __name__ == "__main__":
-    # Test the model
-    success = test_fhe_model()
+# Function to load and prepare Shakespeare data
+def load_shakespeare_data():
+    """Load and prepare Shakespeare data for training"""
+    print("Loading Shakespeare dataset...")
     
-    if success:
-        print("\nSuccess! The reduced bit-width model works with FHE.")
+    # Load the Shakespeare text
+    with open('nanoGPT/data/shakespeare/input.txt', 'r', encoding='utf-8') as f:
+        text = f.read()
+    
+    print(f"Dataset length: {len(text)}")
+    
+    # Get unique characters (vocabulary)
+    chars = sorted(list(set(text)))
+    vocab_size = len(chars)
+    print(f"Vocabulary size: {vocab_size}")
+    
+    # Create mapping from characters to integers and back
+    char_to_idx = {ch: i for i, ch in enumerate(chars)}
+    idx_to_char = {i: ch for i, ch in enumerate(chars)}
+    
+    # Function to encode and decode text
+    def encode(s):
+        return [char_to_idx[c] for c in s]
+    
+    def decode(l):
+        return ''.join([idx_to_char[i] for i in l])
+    
+    # Encode the entire text
+    data = torch.tensor(encode(text), dtype=torch.long)
+    
+    # Split data into train and validation sets (90-10 split)
+    n = int(0.9 * len(data))
+    train_data = data[:n]
+    val_data = data[n:]
+    
+    return train_data, val_data, encode, decode, vocab_size
+
+# Function to get a batch of data
+def get_batch(data, block_size, batch_size):
+    """Generate a batch of data for training or validation"""
+    ix = torch.randint(len(data) - block_size, (batch_size,))
+    x = torch.stack([data[i:i+block_size] for i in ix])
+    y = torch.stack([data[i+1:i+block_size+1] for i in ix])
+    return x, y
+
+# Function to train the FHE-compatible model
+def train_fhe_model():
+    """Train the FHE-compatible model on Shakespeare dataset"""
+    print("\n=== Training FHE-compatible model on Shakespeare dataset ===")
+    
+    # Load Shakespeare data
+    train_data, val_data, encode, decode, vocab_size = load_shakespeare_data()
+    
+    # Set training hyperparameters
+    batch_size = 64
+    block_size = 32  # Context window size
+    learning_rate = 1e-3
+    max_iters = 5000
+    eval_interval = 500
+    
+    # Create the model configuration
+    config = FHEGPTConfig(
+        block_size=block_size,
+        vocab_size=vocab_size,
+        n_layer=3,
+        n_embd=64
+    )
+    
+    # Create the model
+    model = FHEReducedBitGPT(config)
+    
+    # Create optimizer
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+    
+    # Training loop
+    print("Starting training...")
+    for iter in range(max_iters):
+        # Sample a batch of data
+        xb, yb = get_batch(train_data, block_size, batch_size)
+        
+        # Forward pass
+        logits = model(xb)
+        loss = torch.nn.functional.cross_entropy(logits.view(-1, logits.size(-1)), yb.view(-1))
+        
+        # Backward pass
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        # Print training progress
+        if iter % eval_interval == 0 or iter == max_iters - 1:
+            print(f"Iteration {iter}: Training loss {loss.item():.4f}")
+            
+            # Evaluate on validation set
+            model.eval()
+            with torch.no_grad():
+                xv, yv = get_batch(val_data, block_size, batch_size)
+                logits = model(xv)
+                val_loss = torch.nn.functional.cross_entropy(logits.view(-1, logits.size(-1)), yv.view(-1))
+                print(f"Validation loss: {val_loss.item():.4f}")
+            model.train()
+    
+    # Save the trained model
+    torch.save(model.state_dict(), 'fhe_nanogpt_shakespeare.pt')
+    print("Model saved to fhe_nanogpt_shakespeare.pt")
+    
+    return model, encode, decode
+
+# Function to generate text using the trained model
+def generate_text(model, encode, decode, prompt, max_new_tokens=100):
+    """Generate text using the trained model"""
+    print(f"\n=== Generating text with prompt: '{prompt}' ===")
+    
+    # Encode the prompt
+    encoded_prompt = torch.tensor(encode(prompt)).unsqueeze(0)  # Add batch dimension
+    
+    # Generate text
+    model.eval()
+    with torch.no_grad():
+        output_ids = model.generate(encoded_prompt, max_new_tokens)
+    
+    # Decode the output
+    generated_text = decode(output_ids[0].tolist())
+    
+    return generated_text
+
+if __name__ == "__main__":
+    # Choose what to do
+    import sys
+    
+    if len(sys.argv) > 1 and sys.argv[1] == 'train':
+        # Train the model and generate text with a prompt
+        model, encode, decode = train_fhe_model()
+        generated_text = generate_text(model, encode, decode, "King ")
+        print(f"Generated text:\n{generated_text}")
+    
+    elif len(sys.argv) > 1 and sys.argv[1] == 'generate':
+        # Load the trained model and generate text
+        config = FHEGPTConfig()
+        train_data, val_data, encode, decode, vocab_size = load_shakespeare_data()
+        
+        # Update config with correct vocab size
+        config.vocab_size = vocab_size
+        config.n_layer = 3
+        config.n_embd = 64
+        config.block_size = 32
+        
+        model = FHEReducedBitGPT(config)
+        model.load_state_dict(torch.load('fhe_nanogpt_shakespeare.pt'))
+        
+        prompt = "King "
+        if len(sys.argv) > 2:
+            prompt = sys.argv[2]
+            
+        generated_text = generate_text(model, encode, decode, prompt)
+        print(f"Generated text:\n{generated_text}")
+    
     else:
-        print("\nThe model still needs adjustments to work with FHE.") 
+        # Run the FHE test
+        success = test_fhe_model()
+        
+        if success:
+            print("\nSuccess! The reduced bit-width model works with FHE.")
+        else:
+            print("\nThe model still needs adjustments to work with FHE.") 

@@ -1,96 +1,107 @@
 # Encryption-friendly LLM Architecture
 
-This project implements Fully Homomorphic Encryption (FHE) compatible versions of language models, allowing secure inference on encrypted data. We've successfully created transformer architectures that can run under FHE while maintaining model quality.
+This project implements a Fully Homomorphic Encryption (FHE) compatible approach to Large Language Models, focusing on privacy-preserving inference.
 
-## Working FHE Models
+## Key Technologies
+- **Fully Homomorphic Encryption**: Allows computation on encrypted data without decryption
+- **Concrete-ML**: FHE library that only supports integer operations
+- **PyTorch**: For model training and conversion to FHE
 
-### 1. FHE-Reduced Bit-width GPT (`fhe_nanogpt_reduced_bitwidth.py`)
-A transformer-based language model that successfully runs under FHE with the following capabilities:
-- 3 transformer layers
-- 64-dimensional embeddings
-- 32 token context window
-- 256 vocabulary size
-- 0.13M parameters
-- Perfect accuracy under FHE (MAE: ~1.77e-17)
+## Project Structure
 
-Key innovations:
-- Explicit bit-width reduction between layers
-- Modified residual connections using averaging
-- Aggressive quantization (3-bit)
-- FHE-friendly activation functions
+### Main Components
+- `simple_fhe_shakespeare.py`: Integer-only transformer for Shakespeare text generation
+- `fhe_convert.py`: Converts the trained model to FHE format
+- `fhe_convert_simple.py`: Simple demonstration of integer-only FHE model
+- `fhe_nanogpt_reduced_bitwidth.py`: Original FHE-compatible nanoGPT (using floating point)
 
-### 2. Minimal FHE Models (`fhe_nanogpt_concrete_v3.py`)
-Reference implementations showing FHE compatibility:
-- MinimalFHEModel: Basic FHE-compatible neural network
-- SimplifiedTransformerBlock: Single transformer block with FHE optimizations
+## Integer-Only FHE Implementation
 
-## Running the Models
+Our key insight is that Concrete-ML's FHE implementation only supports integer operations. Our implementation addresses this by:
 
-### Prerequisites
-1. Python 3.10
-2. PyTorch
-3. Concrete-ML (will be installed automatically)
+1. **Integer-only operations**: Replacing all floating point operations with integer equivalents
+2. **Integer weights**: Quantizing all weights to integers by scaling, rounding, and rescaling
+3. **Bit-width control**: Using bit shifts for division operations to control numerical precision
+4. **FHE-friendly activation**: Using only integer-compatible activation functions (ReLU)
+5. **One-hot encoding**: Using integer (0/1) one-hot encoding for token inputs
+
+### Technical Approach
+
+#### Integer-Only Matrix Operations
+Instead of standard floating-point matrix multiplications, we:
+- Scale weights by 100, round to integers, and store them as integer parameters
+- Use integer matrix multiplication
+- Apply integer division (via bit shifting) to rescale results
+
+#### Avoiding Floating-Point Activations
+Our activation functions are integer-only:
+- ReLU: Simple max(0, x) which works with integers
+- No softmax (replaced with simple integer normalization)
+- No layer normalization (removed to maintain integer constraints)
+
+#### Scaling and Bit Control
+To prevent integer overflow:
+- Apply integer division via bit shifting (`x >> 1` divides by 2)
+- Carefully control the bit width through the model
+- Quantize to integers periodically during training
+
+## Running the Project
 
 ### Setup
+1. Create a Python 3.10 environment for Concrete-ML compatibility:
 ```bash
-# Create and activate a Python 3.10 virtual environment
-python3.10 -m venv fhe_llm_env_py310
+python -m venv fhe_llm_env_py310
 source fhe_llm_env_py310/bin/activate
+```
 
-# Install dependencies
+2. Install dependencies:
+```bash
 pip install torch numpy
+pip install concrete-ml==1.9.0
 ```
 
-### Running FHE-Reduced Bit-width GPT
+### Training
+Train the integer-only model:
 ```bash
-python fhe_nanogpt_reduced_bitwidth.py
+python simple_fhe_shakespeare.py --train
 ```
-This will:
-1. Create a FHE-compatible GPT model
-2. Test regular inference
-3. Compile for FHE
-4. Run in FHE simulation mode
-5. Run with actual encryption
 
-### Running Minimal FHE Models
+### Text Generation
+Generate text with the trained model:
 ```bash
-# Run with FHE simulation
-python fhe_nanogpt_concrete_v3.py --fhe_mode simulate
-
-# Run with actual encryption
-python fhe_nanogpt_concrete_v3.py --fhe_mode execute
+python simple_fhe_shakespeare.py --generate "King "
 ```
 
-## Technical Details
+### FHE Conversion
+Convert the trained model to FHE format:
+```bash
+python fhe_convert.py
+```
 
-### FHE Compatibility Features
-1. Bit-width Control:
-   - Explicit scaling between operations (x * 0.1)
-   - Modified residual connections (averaging instead of addition)
-   - Small weight initialization (std=0.005)
+Try the simple integer-only FHE example:
+```bash
+python fhe_convert_simple.py
+```
 
-2. FHE-Friendly Operations:
-   - Polynomial activation (x² + x) instead of ReLU/GELU
-   - Simplified attention mechanism
-   - Element-wise operations where possible
-   - Aggressive quantization (3-bit)
+## FHE Limitations and Workarounds
 
-### Current Limitations
-1. Maximum model size tested: 0.13M parameters
-2. Input must be one-hot encoded for FHE circuit
-3. Generation is currently token-by-token
-4. Limited context window (32 tokens)
-
-## Future Work
-1. Scaling to larger model sizes
-2. Implementing efficient token generation
-3. Testing with real-world datasets
-4. Optimizing FHE circuit compilation
-5. Reducing encryption overhead
+1. **Integer-only constraint**: Replace all floating-point ops with integer equivalents
+2. **No biases**: Remove biases from all linear layers
+3. **Limited activations**: Only use integer-compatible activation functions
+4. **Bit width control**: Carefully manage integer width to avoid overflow
+5. **Reduced dimensions**: Keep model smaller due to FHE computational overhead
 
 ## Results
-Our FHE-compatible GPT model achieves:
-- Perfect accuracy between regular and FHE inference
-- Successful compilation with 3-bit quantization
-- Working encryption and decryption
-- Stable numerical behavior through multiple layers
+
+Our project successfully demonstrates:
+1. Training a Shakespeare language model with FHE-compatible architecture
+2. Converting the model to use only integer operations
+3. Compiling the model for FHE execution using Concrete-ML
+4. Simulating and executing FHE inference
+
+This work provides a foundation for privacy-preserving LLM inference, allowing computation on encrypted inputs without access to the plaintext data.
+
+## Team
+- Arpit Kumar
+- Chirag Aggarwal
+- Vinay Yadav
