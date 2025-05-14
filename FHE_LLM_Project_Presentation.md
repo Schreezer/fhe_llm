@@ -69,27 +69,6 @@
 
 ---
 
-## Novelty
-
-### Key Innovations in Our Implementation:
-
-1. **Explicit Bit-width Reduction Strategy**:
-   - Strategic scaling between layers prevents bit-width explosion
-   - Novel approach to residual connections (averaging vs addition)
-   - Progressive quantization throughout the network
-
-2. **FHE-Optimized Attention Mechanism**:
-   - Replaced softmax with polynomial approximation
-   - Aggressive scaling of attention weights
-   - Single-head attention with controlled numerical precision
-
-3. **End-to-End FHE Compatibility**:
-   - Successfully adapted transformer architecture for FHE execution
-   - Maintained perfect accuracy between regular and FHE inference
-   - Achieved stable numerical behavior through multiple transformer layers
-
----
-
 ## Results & Discussion
 
 ### FHE-Compatible Model Specifications:
@@ -132,10 +111,9 @@
 
 ### Future Directions:
 1. **Scaling to Larger Models**: Increase embedding dimensions and layers
-2. **Efficient Token Generation**: Optimize the generation process
-3. **Real-world Testing**: Apply to actual applications and datasets
-4. **Circuit Optimization**: Reduce compilation and execution time
-5. **Reducing Encryption Overhead**: Optimize key management and encryption
+2. **Circuit Optimization**: Reduce compilation and execution time[1]
+3. **Adapting to Other Architectures**: Explore implementing our FHE techniques on alternative LLMs, such as [BitNet](https://github.com/microsoft/BitNet), which is specifically designed for bit-efficient transformer models. This could further improve FHE compatibility and efficiency.
+
 
 ---
 
